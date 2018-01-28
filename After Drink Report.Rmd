@@ -13,6 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r data set , message=F,warning=F,echo=F}
 library(dplyr)
 library(ggplot2)
+library(geosphere)
 
 restaurant = read.csv(file("kinmen-restaurant-point.csv"))
 km = read.csv(file("金門隨機點_依10趴人口utf8.csv"))
