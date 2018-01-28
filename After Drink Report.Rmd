@@ -1,0 +1,98 @@
+---
+title: "酒後計程車補貼成本估計"
+author: "Chiahua.Wang"
+date: "2018/1/28"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+```{r data set , message=F,warning=F,echo=F}
+library(dplyr)
+library(ggplot2)
+
+restaurant = read.csv(file("kinmen-restaurant-point.csv"))
+km = read.csv(file("金門隨機點_依10趴人口utf8.csv"))
+load("taxi.RData")
+
+# 從 Google Maps API 導航的資料裡，取得開車的部分。
+
+taxi.trip = data.frame()
+
+for (i in 1:length(taxi)) {
+  x1 = taxi[i][[1]]$routes[[1]]$legs[[1]]$start_location$lat[1]
+  x2 = taxi[i][[1]]$routes[[1]]$legs[[1]]$end_location$lat[1]
+  y1 = taxi[i][[1]]$routes[[1]]$legs[[1]]$start_location$lng[1]
+  y2 = taxi[i][[1]]$routes[[1]]$legs[[1]]$end_location$lng[1]
+  
+  if (taxi[i][[1]]$routes[[1]]$legs[[1]]$steps[[1]]$travel_mode != "DRIVING") {
+    next
+  }
+  
+  Temp = data.frame(i = i,
+                    d = distm(c(y1,x1),c(y2,x2),fun=distHaversine)[1],
+                    m = taxi[i][[1]]$routes[[1]]$legs[[1]]$distance$value[1],
+                    t = round(taxi[i][[1]]$routes[[1]]$legs[[1]]$duration$value[1]/60,2))
+  taxi.trip = rbind(taxi.trip,Temp,stringsAsFactors=F)
+  rm(x1);rm(y1);rm(x2);rm(y2);rm(Temp)
+  
+}
+
+
+
+taxi.trip = mutate(taxi.trip,fee = round((100+round(ifelse((m-1000)<0,0,m-1000)/250,0)*5),0),
+                     nightfee=round((100+round(ifelse((m-800)<0,0,m-800)/200,0)*5),0))
+
+feecout = data.frame(cars=sample(c(1:500),365,replace=T))
+
+for ( i in 1:nrow(feecout)) {
+  feecout$taxiFee[i] = sum(taxi.trip$fee[sample(nrow(taxi.trip),feecout$cars[i],replace=T)])
+}
+
+```
+
+## 結論
+
+把結論寫在前面，是讓大家快點看到。想知道原由和過程的可以再往後面看。
+
+```{r singletaxifee, message=F,warning=F,echo=F}
+
+ggplot(taxi.trip,aes(x=fee))+geom_density()+ggtitle("單趟計程車費機率密度分佈圖")
+
+```
+
+首先是 2068 筆隨機路徑的模擬結果，可以發現計程車費有兩種峰值：200以下一組，300元以上一組。
+
+```{r alldaysum, message=F,warning=F,echo=F}
+
+ggplot(feecout,aes(x=taxiFee))+geom_density()+ggtitle("全年單日總計程車費機率密度分佈圖")
+
+```
+
+
+## 關於這個專案
+
+酒駕一直是個問題。網路上在前些日子，由金門酒廠的高層提出了代駕或計程車費補貼等方式，以減少酒駕問題的討論方向。我覺得這樣的作法具體的反映了金門酒廠的社會責任態度，因此十分贊同這樣的討論。
+
+但問題來了，以計程車費補貼的方式來說，該補貼多少呢？以及，這樣的補貼方式，金門酒廠面對的量體及成本又可能是多少呢？
+
+因此我興起了念頭，開了這個 side project。
+
+原理很簡單，先利用餐廳的坐標及散布在全金門的隨機點坐標，隨機取兩點出來做為起、終點，然後用 Google Maps API 進行導航。如此一來，我們就取得了 2322 條導航路徑資料。從中取出直線距離(d)、行駛距離(m)和行駛時間(t)，然後計算計程車費。
+
+以這樣的隨機路徑為樣本，再以隨機取樣的方式估計每天可能的補貼車次，再概算出全年可能的成本。
+
+## 假設條件
+
+因為我不知道金門的餐廳每天有多少客人（開多少桌）、喝幾瓶酒、每桌有喝酒的人有多少人，就不知道可能每天會面對多少車次。因此只用常態分配做為模型去取得。如果有實際上的市場調查，這樣的概估會更接近真值。
+
+假設條件：每天可能有1~500車次。
+
+## 過程
+
+探索過程可以直接看 After-Drink.R 。
+
+
