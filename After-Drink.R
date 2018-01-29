@@ -141,12 +141,12 @@ yearcount= daycount*365
 
 rate = c(seq(0.01,1,0.01))
 
-feecout = data.frame(cars=sample(c(1:500),365,replace=T),
+taxi.est = data.frame(cars=sample(c(1:500),365,replace=T),
                      taxiFee=0
                      )
-feecout$taxiFee = mean(taxi.trip$fee[sample(nrow(taxi.trip),feecout$cars,replace=T)])
+taxi.est$taxiFee = sum(taxi.trip$fee[sample(nrow(taxi.trip),feecout$cars,replace=T)])
 #stratege fomula,fix
 
-ggplot(feecout,aes(x=taxiFee))+geom_density()
+ggplot(taxi.est,aes(x=taxiFee))+geom_density()
 
-qnorm(0.1,mean=mean(feecout$taxiFee),sd=sd(feecout$taxiFee))
+qnorm(0.1,mean=mean(taxi.est$taxiFee),sd=sd(taxi.est$taxiFee))

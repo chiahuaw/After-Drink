@@ -15,9 +15,16 @@ library(dplyr)
 library(ggplot2)
 library(geosphere)
 
+set.seed(12771)
+options(scipen = 999999)
+
 restaurant = read.csv(file("kinmen-restaurant-point.csv"))
 km = read.csv(file("金門隨機點_依10趴人口utf8.csv"))
 load("taxi.RData")
+
+thm = function() {
+  theme_gray(base_family = "黑體-繁 中黑") + theme(text=element_text(size=18))
+}
 
 # 從 Google Maps API 導航的資料裡，取得開車的部分。
 
@@ -47,32 +54,56 @@ for (i in 1:length(taxi)) {
 taxi.trip = mutate(taxi.trip,fee = round((100+round(ifelse((m-1000)<0,0,m-1000)/250,0)*5),0),
                      nightfee=round((100+round(ifelse((m-800)<0,0,m-800)/200,0)*5),0))
 
-feecout = data.frame(cars=sample(c(1:500),365,replace=T))
+est.cars = seq(1,500,1)
 
-for ( i in 1:nrow(feecout)) {
-  feecout$taxiFee[i] = sum(taxi.trip$fee[sample(nrow(taxi.trip),feecout$cars[i],replace=T)])
+taxi.est = data.frame(cars=sample(est.cars,365,replace=T))
+
+for ( i in 1:nrow(taxi.est)) {
+  taxi.est$taxiFee[i] = sum(taxi.trip$fee[sample(nrow(taxi.trip),taxi.est$cars[i],replace=T)])
 }
 
+u = mean(taxi.est$taxiFee)
+s = sd(taxi.est$taxiFee)
+
+taxi.est.y = data.frame()
+for ( i in 1:10000) {
+  Temp1 = sample(est.cars,365,replace=T)
+  Temp2 = sapply(X = Temp1,FUN = function (x) {taxi.trip$fee[sample(nrow(taxi.trip),x,replace=T)] %>% sum()})
+  
+  taxi.est.y = rbind(taxi.est.y,
+                     cbind(sum(Temp1),sum(Temp2)))
+  rm(Temp1);rm(Temp2)
+}
+names(taxi.est.y) = c("cars","taxiFee")
 ```
 
 ## 結論
 
-把結論寫在前面，是讓大家快點看到。想知道原由和過程的可以再往後面看。
+把結論寫在前面，是讓大家快點看到，節省時間。想知道原由和過程的可以再往後面看。
 
 ```{r singletaxifee, message=F,warning=F,echo=F}
 
-ggplot(taxi.trip,aes(x=fee))+geom_density()+ggtitle("單趟計程車費機率密度分佈圖")
+ggplot(taxi.trip,aes(x=fee))+geom_density()+ggtitle("單趟計程車費機率密度分佈圖")+thm()
 
 ```
 
-首先是 2068 筆隨機路徑的模擬結果，可以發現計程車費有兩種峰值：200以下一組，300元以上一組。
+單趟的計程車費總額可能落在 `r quantile(taxi.trip$fee[order(taxi.trip$fee)],0.1)` 到 `r quantile(taxi.trip$fee[order(taxi.trip$fee)],0.9)` 之間。（90%信賴區間）
 
-```{r alldaysum, message=F,warning=F,echo=F}
+```{r daytaxifee, message=F,warning=F,echo=F}
 
-ggplot(feecout,aes(x=taxiFee))+geom_density()+ggtitle("全年單日總計程車費機率密度分佈圖")
+ggplot(taxi.est,aes(x=taxiFee))+geom_density()+ggtitle("單日計程車費機率密度分佈圖")+thm()
 
 ```
 
+單日的計程車費總額可能落在 `r quantile(taxi.est$taxiFee[order(taxi.est$taxiFee)],0.1)` 到 `r quantile(taxi.est$taxiFee[order(taxi.est$taxiFee)],0.9)` 之間。（90%信賴區間）
+
+```{r yeartaxifee, message=F,warning=F,echo=F}
+
+ggplot(taxi.est.y,aes(x=taxiFee))+geom_density()+ggtitle("單年計程車費機率密度分佈圖")+thm()
+
+```
+
+單年的計程車費總額可能落在 `r quantile(taxi.est.y$taxiFee[order(taxi.est.y$taxiFee)],0.1)[1]` 到 `r quantile(taxi.est.y$taxiFee[order(taxi.est.y$taxiFee)],0.9)[1]` 。（90%信賴區間）
 
 ## 關於這個專案
 
@@ -92,8 +123,17 @@ ggplot(feecout,aes(x=taxiFee))+geom_density()+ggtitle("全年單日總計程車�
 
 假設條件：每天可能有1~500車次。
 
-## 過程
+## 建立路徑資料
 
-探索過程可以直接看 After-Drink.R 。
+過程可以直接看 After-Drink.R 。
 
+## 資料探索
+
+首先是 2068 筆隨機路徑的模擬結果，可以發現計程車費有兩種峰值：200以下一組，300元以上一組。
+
+```{r EDA , message=F,warning=F,echo=F}
+
+
+
+```
 
