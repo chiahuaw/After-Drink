@@ -8,21 +8,37 @@
 #
 
 library(shiny)
+library(dplyr)
+library(ggplot2)
+library(geosphere)
+library(knitr)
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
    
    # Application title
-   titlePanel("Old Faithful Geyser Data"),
+   titlePanel("酒後計程車費補貼策略成本估計"),
    
    # Sidebar with a slider input for number of bins 
    sidebarLayout(
       sidebarPanel(
-         sliderInput("bins",
-                     "Number of bins:",
-                     min = 1,
-                     max = 50,
-                     value = 30)
+         # sliderInput("cars",
+         #             "估計一日最小最大車次：",
+         #             min = 1,
+         #             max = 800,
+         #             value = c(1,100)),
+         textInput("carsmin",
+                   "你覺得一天可能的最少車次：",value = 1),
+         textInput("carsmax",
+                   "你覺得一天可能的最大車次：",value = 100),
+         textInput("carsmean",
+                   "你覺得一天可能平均有多少車次：",value = 50),
+         selectInput("plan","補貼策略：",choices = c("固定金額","固定比例"),multiple = F,selected = "固定比例"),
+         textInput("money",
+                   "補貼比例或金額：",value = 0.1),
+         selectInput("selfpay","有最小自付額嗎？",choices = c("是","否"),multiple = F,selected = "是"),
+         textInput("selfpaymoney",
+                   "最小自付額（元）：",value = 100)
       ),
       
       # Show a plot of the generated distribution
