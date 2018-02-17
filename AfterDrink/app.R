@@ -65,7 +65,8 @@ ui <- fluidPage(
         plotOutput("distPlot2"),
          textOutput("text2"),
         plotOutput("distPlot3"),
-        textOutput("text3")
+        textOutput("text3"),
+        textOutput("text4")
       )
    )
 )
@@ -133,13 +134,6 @@ server <- function(input, output) {
      s.mean = as.numeric(input$carsmean)
      # s.cars = rnorm(n = 365,mean = s.mean,sd=s.sd)
      # s.cars = ifelse(s.cars<0,0,s.cars)
-     
-     # selectInput("plan","補貼策略：",choices = c("固定金額","固定比例"),multiple = F,selected = "固定比例"),
-     # numericInput("money",
-     #              "補貼比例或金額：",value = 0.1),
-     # selectInput("selfpay","有最小自付額嗎？",choices = c("是","否"),multiple = F,selected = "是"),
-     # numericInput("selfpaymoney",
-     #              "最小自付額（元）：",value = 100)
 
      Temp.plan = input$plan
      Temp.money = input$money
@@ -204,6 +198,13 @@ server <- function(input, output) {
      s.sd = abs(as.numeric(input$carsmax)-as.numeric(input$carsmin))/2
      s.mean = as.numeric(input$carsmean)
      paste0("一年的補貼成本可能落在", quantile(Temp.y$taxiFee[order(Temp.y$taxiFee)],0.1)[1],"元到", quantile(Temp.y$taxiFee[order(Temp.y$taxiFee)],0.9)[1],"元之間。（90%信賴區間）")
+   })
+   
+   output$text4 <- renderText({
+     s.sd = abs(as.numeric(input$carsmax)-as.numeric(input$carsmin))/2
+     s.mean = as.numeric(input$carsmean)
+     Temp.t = taxi.est.y/2
+     paste0("一年的代駕成本可能落在", quantile(Temp.t$taxiFee[order(Temp.t$taxiFee)],0.1)[1],"元到", quantile(Temp.t$taxiFee[order(Temp.t$taxiFee)],0.9)[1],"元之間。（90%信賴區間）")
    })
    
 }
